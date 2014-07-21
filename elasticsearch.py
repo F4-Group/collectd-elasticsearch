@@ -2,7 +2,7 @@
 # Copyright 2014 Jeremy Carroll
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
+# you may not use this file except in compliance with the License.
 #You may obtain a copy of the License at
 #
 #    http://www.apache.org/licenses/LICENSE-2.0
@@ -17,6 +17,7 @@
 import collectd
 import json
 import urllib2
+import socket
 import collections
 from distutils.version import StrictVersion
 
@@ -60,14 +61,14 @@ STATS_ES1 = {
     ## REFRESH
     'indices.refresh.total': Stat("counter", "nodes.%s.indices.refresh.total"),
     'indices.refresh.time': Stat("counter", "nodes.%s.indices.refresh.total_time_in_millis"),
-}
+    }
 
 # DICT: ElasticSearch 0.90.x
 STATS_ES09 = {
 
     ##CPU
     'process.cpu.percent': Stat("gauge", "nodes.%s.process.cpu.percent"),
-}
+    }
 
 # DICT: Common stuff
 STATS = {
@@ -135,7 +136,7 @@ STATS = {
 
     # PROCESS METRICS #
     'process.open_file_descriptors': Stat("gauge", "nodes.%s.process.open_file_descriptors"),
-}
+    }
 
 
 # FUNCTION: Collect stats from JSON result
@@ -177,6 +178,12 @@ def fetch_url(url):
         result = json.load(urllib2.urlopen(url, timeout=10))
     except urllib2.URLError, e:
         collectd.error('elasticsearch plugin: Error connecting to %s - %r' % (url, e))
+        return None
+    except socket.timeout as e:
+        collectd.error('elasticsearch plugin: Timeout connecting to %s - %r' % (url, e))
+        return None
+    except socket.error as e: # for example : ECONNRESET
+        collectd.error('elasticsearch plugin: Connection error to %s - %r' % (url, e))
         return None
     return result
 
