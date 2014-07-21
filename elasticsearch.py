@@ -212,6 +212,8 @@ def fetch_stats():
         STATS_CUR[path] = Stat("counter", 'nodes.%s.{0}'.format(path))
 
     result = fetch_url(ES_URL)
+    if result is None:
+        return
 
     ES_CLUSTER = result['cluster_name']
     return parse_stats(result)
