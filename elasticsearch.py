@@ -225,18 +225,17 @@ def parse_stats(json):
     """Parse stats response from ElasticSearch"""
     for name, key in STATS_CUR.iteritems():
         result = lookup_stat(name, json)
-        if len(result) == 1:
+        count = len(result)
+        if count == 1:
             dispatch_stat(result[0], name, key, "")
         else:
             total = 0
             for index, value in enumerate(result):
                 dispatch_stat(value, name, key, "node%d" % index)
                 total += value
-                if name == "jvm.mem.heap-used":
-                    collectd.warning('%s %d - %d' % (name, total, value))
-            dispatch_stat(total, name, key, "")
-            if name == "jvm.mem.heap-used":
-                collectd.warning('-------------%d' % (total))
+            if key.type != "bytes":
+                total = total / count
+            dispatch_stat(total, name, key, "total")
 
 
 def dispatch_stat(result, name, key, node_index):
