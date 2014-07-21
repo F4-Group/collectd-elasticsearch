@@ -3,7 +3,7 @@
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
+# You may obtain a copy of the License at
 #
 #    http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -61,14 +61,14 @@ STATS_ES1 = {
     ## REFRESH
     'indices.refresh.total': Stat("counter", "nodes.%s.indices.refresh.total"),
     'indices.refresh.time': Stat("counter", "nodes.%s.indices.refresh.total_time_in_millis"),
-    }
+}
 
 # DICT: ElasticSearch 0.90.x
 STATS_ES09 = {
 
     ##CPU
     'process.cpu.percent': Stat("gauge", "nodes.%s.process.cpu.percent"),
-    }
+}
 
 # DICT: Common stuff
 STATS = {
@@ -136,7 +136,7 @@ STATS = {
 
     # PROCESS METRICS #
     'process.open_file_descriptors': Stat("gauge", "nodes.%s.process.open_file_descriptors"),
-    }
+}
 
 
 # FUNCTION: Collect stats from JSON result
@@ -182,7 +182,7 @@ def fetch_url(url):
     except socket.timeout as e:
         collectd.error('elasticsearch plugin: Timeout connecting to %s - %r' % (url, e))
         return None
-    except socket.error as e: # for example : ECONNRESET
+    except socket.error as e:  # for example : ECONNRESET
         collectd.error('elasticsearch plugin: Connection error to %s - %r' % (url, e))
         return None
     return result
@@ -193,6 +193,8 @@ def fetch_stats():
 
     base_url = 'http://' + ES_HOST + ':' + str(ES_PORT) + '/'
     server_info = fetch_url(base_url)
+    if server_info is None:
+        return
     version = server_info['version']['number']
 
     if StrictVersion(version) >= StrictVersion('1.0.0'):
@@ -230,7 +232,11 @@ def parse_stats(json):
             for index, value in enumerate(result):
                 dispatch_stat(value, name, key, "node%d" % index)
                 total += value
+                if name == "jvm.mem.heap-used":
+                    collectd.warning('%s %d - %d' % (name, total, value))
             dispatch_stat(total, name, key, "")
+            if name == "jvm.mem.heap-used":
+                collectd.warning('-------------%d' % (total))
 
 
 def dispatch_stat(result, name, key, node_index):
@@ -247,7 +253,7 @@ def dispatch_stat(result, name, key, node_index):
     if len(node_index) == 0:
         val.plugin_instance = ES_CLUSTER
     val.type = estype
-    val.type_instance =  name
+    val.type_instance = name
     val.values = [value]
     val.dispatch()
 
