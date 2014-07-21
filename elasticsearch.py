@@ -1,7 +1,7 @@
-#! /usr/bin/python
-#Copyright 2014 Jeremy Carroll
+# ! /usr/bin/python
+# Copyright 2014 Jeremy Carroll
 #
-#Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the "License");
 #you may not use this file except in compliance with the License.
 #You may obtain a copy of the License at
 #
@@ -17,7 +17,6 @@
 import collectd
 import json
 import urllib2
-import socket
 import collections
 from distutils.version import StrictVersion
 
@@ -141,16 +140,17 @@ STATS = {
 
 # FUNCTION: Collect stats from JSON result
 def lookup_stat(stat, json):
-
-    node = json['nodes'].keys()[0]
-    val = dig_it_up(json, STATS_CUR[stat].path % node)
-
-    # Check to make sure we have a valid result
-    # dig_it_up returns False if no match found
-    if not isinstance(val, bool):
-        return int(val)
-    else:
-        return None
+    node_names = json['nodes'].keys()
+    results = []
+    for node in node_names:
+        val = dig_it_up(json, STATS_CUR[stat].path % node)
+        # Check to make sure we have a valid result
+        # dig_it_up returns False if no match found
+        if not isinstance(val, bool):
+            results.append(int(val))
+        else:
+            results.append(None)
+    return results
 
 
 def configure_callback(conf):
@@ -171,6 +171,7 @@ def configure_callback(conf):
 
     log_verbose('Configured with host=%s, port=%s' % (ES_HOST, ES_PORT))
 
+
 def fetch_url(url):
     try:
         result = json.load(urllib2.urlopen(url, timeout=10))
@@ -188,7 +189,7 @@ def fetch_stats():
     version = server_info['version']['number']
 
     if StrictVersion(version) >= StrictVersion('1.0.0'):
-        ES_URL = base_url + '_nodes/_local/stats/transport,http,process,jvm,indices'
+        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices'
         STATS_CUR = dict(STATS.items() + STATS_ES1.items())
     else:
         ES_URL = base_url + '_cluster/nodes/_local/stats?http=true&process=true&jvm=true&transport=true'
@@ -213,10 +214,17 @@ def parse_stats(json):
     """Parse stats response from ElasticSearch"""
     for name, key in STATS_CUR.iteritems():
         result = lookup_stat(name, json)
-        dispatch_stat(result, name, key)
+        if len(result) == 1:
+            dispatch_stat(result[0], name, key, "")
+        else:
+            total = 0
+            for index, value in enumerate(result):
+                dispatch_stat(value, name, key, "node%d" % index)
+                total += value
+            dispatch_stat(total, name, key, "")
 
 
-def dispatch_stat(result, name, key):
+def dispatch_stat(result, name, key, node_index):
     """Read a key from info response data and dispatch a value"""
     if result is None:
         collectd.warning('elasticsearch plugin: Value not found for %s' % name)
@@ -226,9 +234,11 @@ def dispatch_stat(result, name, key):
     log_verbose('Sending value[%s]: %s=%s' % (estype, name, value))
 
     val = collectd.Values(plugin='elasticsearch')
-    val.plugin_instance = ES_CLUSTER
+    val.plugin_instance = ES_CLUSTER + "_" + node_index
+    if len(node_index) == 0:
+        val.plugin_instance = ES_CLUSTER
     val.type = estype
-    val.type_instance = name
+    val.type_instance =  name
     val.values = [value]
     val.dispatch()
 
@@ -251,6 +261,7 @@ def log_verbose(msg):
     if not VERBOSE_LOGGING:
         return
     collectd.info('elasticsearch plugin [verbose]: %s' % msg)
+
 
 collectd.register_config(configure_callback)
 collectd.register_read(read_callback)
