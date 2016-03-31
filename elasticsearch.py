@@ -19,6 +19,7 @@ import json
 import urllib2
 import socket
 import collections
+import copy
 from distutils.version import StrictVersion
 
 PREFIX = "elasticsearch"
@@ -30,6 +31,12 @@ VERBOSE_LOGGING = False
 Stat = collections.namedtuple('Stat', ('type', 'path'))
 
 STATS_CUR = {}
+
+# DICT: ElasticSearch 0.90.x
+STATS_ES09 = {
+    ##CPU
+    'process.cpu.percent': Stat("gauge", "nodes.%s.process.cpu.percent"),
+}
 
 # DICT: ElasticSearch 1.0.0
 STATS_ES1 = {
@@ -63,12 +70,11 @@ STATS_ES1 = {
     'indices.refresh.time': Stat("counter", "nodes.%s.indices.refresh.total_time_in_millis"),
 }
 
-# DICT: ElasticSearch 0.90.x
-STATS_ES09 = {
+# DICT: ElasticSearch 2.0.0
+STATS_ES2 = copy.deepcopy(STATS_ES1)
+del STATS_ES2['indices.cache.filter.evictions']
+del STATS_ES2['indices.cache.filter.size']
 
-    ##CPU
-    'process.cpu.percent': Stat("gauge", "nodes.%s.process.cpu.percent"),
-}
 
 # DICT: Common stuff
 STATS = {
@@ -203,15 +209,21 @@ def fetch_stats():
         return
     version = server_info['version']['number']
 
-    if StrictVersion(version) >= StrictVersion('1.0.0'):
+    if StrictVersion(version) >= StrictVersion('2.0.0'):
+        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices'
+        STATS_CUR = dict(STATS.items() + STATS_ES2.items())
+        pools = ['generic', 'index', 'get', 'snapshot', 'force_merge', 'bulk', 'warmer', 'flush', 'search', 'refresh', 'fetch_shard_started', 'fetch_shard_store', 'listener', 'management', 'percolate', 'suggest']
+    elif StrictVersion(version) >= StrictVersion('1.0.0'):
         ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices'
         STATS_CUR = dict(STATS.items() + STATS_ES1.items())
+        pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search', 'refresh']
     else:
         ES_URL = base_url + '_cluster/nodes/_local/stats?http=true&process=true&jvm=true&transport=true'
         STATS_CUR = dict(STATS.items() + STATS_ES09.items())
+        pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search', 'refresh']
 
     # add info on thread pools
-    for pool in ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search', 'refresh']:
+    for pool in pools:
       for attr in ['threads', 'queue', 'active', 'largest']:
         path = 'thread_pool.{0}.{1}'.format(pool, attr)
         STATS_CUR[path] = Stat("gauge", 'nodes.%s.{0}'.format(path))
