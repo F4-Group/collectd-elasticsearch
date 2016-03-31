@@ -88,6 +88,12 @@ STATS = {
     'indices.indexing.index-current': Stat("gauge", "nodes.%s.indices.indexing.index_current"),
     'indices.indexing.delete-current': Stat("gauge", "nodes.%s.indices.indexing.delete_current"),
 
+    # SEGMENTS
+    'indices.segments.count': Stat('counter', 'nodes.%s.indices.segments.count'),
+    'indices.segments.memory_in_bytes': Stat('bytes', 'nodes.%s.indices.segments.memory_in_bytes'),
+    'indices.segments.fixed_bit_set_memory_in_bytes': Stat('bytes',
+                                                           'nodes.%s.indices.segments.fixed_bit_set_memory_in_bytes'),
+
     ## GET
     'indices.get.total': Stat("counter", "nodes.%s.indices.get.total"),
     'indices.get.time': Stat("counter", "nodes.%s.indices.get.time_in_millis"),
