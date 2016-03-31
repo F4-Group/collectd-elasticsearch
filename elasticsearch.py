@@ -68,6 +68,10 @@ STATS_ES1 = {
     ## REFRESH
     'indices.refresh.total': Stat("counter", "nodes.%s.indices.refresh.total"),
     'indices.refresh.time': Stat("counter", "nodes.%s.indices.refresh.total_time_in_millis"),
+
+    ## SEGMENTS
+    'indices.segments.count': Stat("gauge", "nodes.%s.indices.segments.count"),
+    'indices.segments.size': Stat("bytes", "nodes.%s.indices.segments.memory_in_bytes"),
 }
 
 # DICT: ElasticSearch 2.0.0
