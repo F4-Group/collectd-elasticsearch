@@ -237,7 +237,7 @@ def parse_stats(json):
         else:
             total = 0
             for index, value in enumerate(result):
-                dispatch_stat(value, name, key, "node%d" % index)
+                dispatch_stat(value, name, key, (json['nodes'].values()[index]['host']) or ("node%d" % index))
                 total += value
             if key.type != "bytes":
                 total = total / count
