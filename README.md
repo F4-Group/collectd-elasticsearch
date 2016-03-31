@@ -24,7 +24,7 @@ ES 1.0 Stats :
 
 Install
 -------
- 1. Place elasticsearch.py in collectd'opt/collectd/lib/collectd/plugins/python (assuming you have collectd installed to /opt/collectd).
+ 1. Place elasticsearch_collectd.py in /opt/collectd/lib/collectd/plugins/python (assuming you have collectd installed to /opt/collectd).
  2. Configure the plugin (see below).
  3. Restart collectd.
 
@@ -36,4 +36,4 @@ Configuration
 Requirements
 ------------
  * collectd 4.9+
- * Elasticsearch 0.9.x or 1.0.x
+ * Elasticsearch 0.9.x or 1.X
