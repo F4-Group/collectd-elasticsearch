@@ -214,15 +214,15 @@ def fetch_stats():
     version = server_info['version']['number']
 
     if StrictVersion(version) >= StrictVersion('2.0.0'):
-        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices'
+        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices,thread_pool'
         STATS_CUR = dict(STATS.items() + STATS_ES2.items())
         pools = ['generic', 'index', 'get', 'snapshot', 'force_merge', 'bulk', 'warmer', 'flush', 'search', 'refresh', 'fetch_shard_started', 'fetch_shard_store', 'listener', 'management', 'percolate', 'suggest']
     elif StrictVersion(version) >= StrictVersion('1.0.0'):
-        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices'
+        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices,thread_pool'
         STATS_CUR = dict(STATS.items() + STATS_ES1.items())
         pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search', 'refresh']
     else:
-        ES_URL = base_url + '_cluster/nodes/_local/stats?http=true&process=true&jvm=true&transport=true'
+        ES_URL = base_url + '_cluster/nodes/_local/stats?http=true&process=true&jvm=true&transport=true&thread_pool=true'
         STATS_CUR = dict(STATS.items() + STATS_ES09.items())
         pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search', 'refresh']
 
