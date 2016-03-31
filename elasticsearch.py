@@ -277,6 +277,7 @@ def dispatch_stat(result, name, key, node_index):
     val.type = estype
     val.type_instance = name
     val.values = [value]
+    val.meta={'0': True}
     val.dispatch()
 
 
