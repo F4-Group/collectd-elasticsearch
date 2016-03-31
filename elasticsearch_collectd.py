@@ -62,7 +62,7 @@ STATS_ES1 = {
     'indices.merges.current-size': Stat("bytes", "nodes.%s.indices.merges.current_size_in_bytes"),
     'indices.merges.total': Stat("counter", "nodes.%s.indices.merges.total"),
     'indices.merges.total-docs': Stat("gauge", "nodes.%s.indices.merges.total_docs"),
-    'indices.merges.total-size': Stat("bytes", "nodes.%s.indices.merges.total_size_in_bytes"),
+    'indices.merges.total-size': Stat("counter", "nodes.%s.indices.merges.total_size_in_bytes"),
     'indices.merges.time': Stat("counter", "nodes.%s.indices.merges.total_time_in_millis"),
 
     ## REFRESH
@@ -85,7 +85,7 @@ STATS = {
 
     ## DOCS
     'indices.docs.count': Stat("gauge", "nodes.%s.indices.docs.count"),
-    'indices.docs.deleted': Stat("counter", "nodes.%s.indices.docs.deleted"),
+    'indices.docs.deleted': Stat("gauge", "nodes.%s.indices.docs.deleted"),
 
     ## STORE
     'indices.store.size': Stat("bytes", "nodes.%s.indices.store.size_in_bytes"),
@@ -142,9 +142,9 @@ STATS = {
     # TRANSPORT METRICS #
     'transport.server_open': Stat("gauge", "nodes.%s.transport.server_open"),
     'transport.rx.count': Stat("counter", "nodes.%s.transport.rx_count"),
-    'transport.rx.size': Stat("bytes", "nodes.%s.transport.rx_size_in_bytes"),
+    'transport.rx.size': Stat("counter", "nodes.%s.transport.rx_size_in_bytes"),
     'transport.tx.count': Stat("counter", "nodes.%s.transport.tx_count"),
-    'transport.tx.size': Stat("bytes", "nodes.%s.transport.tx_size_in_bytes"),
+    'transport.tx.size': Stat("counter", "nodes.%s.transport.tx_size_in_bytes"),
 
     # HTTP METRICS #
     'http.current_open': Stat("gauge", "nodes.%s.http.current_open"),
