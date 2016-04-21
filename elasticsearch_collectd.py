@@ -26,6 +26,7 @@ PREFIX = "elasticsearch"
 ES_CLUSTER = "elasticsearch"
 ES_HOST = "localhost"
 ES_PORT = 9200
+ES_ZONE = ""
 VERBOSE_LOGGING = False
 
 Stat = collections.namedtuple('Stat', ('type', 'path'))
@@ -172,7 +173,7 @@ def lookup_stat(stat, json):
 
 def configure_callback(conf):
     """Received configuration information"""
-    global ES_HOST, ES_PORT, VERBOSE_LOGGING
+    global ES_HOST, ES_PORT, VERBOSE_LOGGING, ES_CLUSTER, ES_ZONE
     for node in conf.children:
         if node.key == 'Host':
             ES_HOST = node.values[0]
@@ -182,6 +183,8 @@ def configure_callback(conf):
             VERBOSE_LOGGING = bool(node.values[0])
         elif node.key == 'Cluster':
             ES_CLUSTER = node.values[0]
+        elif node.key == 'Zone':
+            ES_ZONE = node.values[0]
         else:
             collectd.warning('elasticsearch plugin: Unknown config key: %s.'
                              % node.key)
@@ -214,26 +217,29 @@ def fetch_stats():
     version = server_info['version']['number']
 
     if StrictVersion(version) >= StrictVersion('2.0.0'):
-        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices,thread_pool'
+        ES_URL = base_url + '_nodes/zone:' + ES_ZONE + '/stats/transport,http,process,jvm,indices,thread_pool'
         STATS_CUR = dict(STATS.items() + STATS_ES2.items())
-        pools = ['generic', 'index', 'get', 'snapshot', 'force_merge', 'bulk', 'warmer', 'flush', 'search', 'refresh', 'fetch_shard_started', 'fetch_shard_store', 'listener', 'management', 'percolate', 'suggest']
+        pools = ['generic', 'index', 'get', 'snapshot', 'force_merge', 'bulk', 'warmer', 'flush', 'search', 'refresh',
+                 'fetch_shard_started', 'fetch_shard_store', 'listener', 'management', 'percolate', 'suggest']
     elif StrictVersion(version) >= StrictVersion('1.0.0'):
-        ES_URL = base_url + '_nodes/stats/transport,http,process,jvm,indices,thread_pool'
+        ES_URL = base_url + '_nodes/zone:' + ES_ZONE + '/stats/transport,http,process,jvm,indices,thread_pool'
         STATS_CUR = dict(STATS.items() + STATS_ES1.items())
-        pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search', 'refresh']
+        pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search',
+                 'refresh']
     else:
-        ES_URL = base_url + '_cluster/nodes/_local/stats?http=true&process=true&jvm=true&transport=true&thread_pool=true'
+        ES_URL = base_url + '_cluster/nodes/zone:' + ES_ZONE + '/stats?http=true&process=true&jvm=true&transport=true&thread_pool=true'
         STATS_CUR = dict(STATS.items() + STATS_ES09.items())
-        pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search', 'refresh']
+        pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search',
+                 'refresh']
 
     # add info on thread pools
     for pool in pools:
-      for attr in ['threads', 'queue', 'active', 'largest']:
-        path = 'thread_pool.{0}.{1}'.format(pool, attr)
-        STATS_CUR[path] = Stat("gauge", 'nodes.%s.{0}'.format(path))
-      for attr in ['completed', 'rejected']:
-        path = 'thread_pool.{0}.{1}'.format(pool, attr)
-        STATS_CUR[path] = Stat("counter", 'nodes.%s.{0}'.format(path))
+        for attr in ['threads', 'queue', 'active', 'largest']:
+            path = 'thread_pool.{0}.{1}'.format(pool, attr)
+            STATS_CUR[path] = Stat("gauge", 'nodes.%s.{0}'.format(path))
+        for attr in ['completed', 'rejected']:
+            path = 'thread_pool.{0}.{1}'.format(pool, attr)
+            STATS_CUR[path] = Stat("counter", 'nodes.%s.{0}'.format(path))
 
     result = fetch_url(ES_URL)
     if result is None:
@@ -277,7 +283,7 @@ def dispatch_stat(result, name, key, node_index):
     val.type = estype
     val.type_instance = name
     val.values = [value]
-    val.meta={'0': True}
+    val.meta = {'0': True}
     val.dispatch()
 
 
