@@ -254,17 +254,14 @@ def parse_stats(json):
     for name, key in STATS_CUR.iteritems():
         result = lookup_stat(name, json)
         count = len(result)
-        if count == 1:
-            dispatch_stat(result[0], name, key, "")
-        else:
-            total = 0
-            for index, value in enumerate(result):
-                dispatch_stat(value, name, key, (json['nodes'].values()[index]['name']) or ("node%d" % index))
-                if value is not None:
-                    total += value
-            if key.type != "bytes" and count != 0:
-                total = total / count
-            dispatch_stat(total, name, key, "total")
+        total = 0
+        for index, value in enumerate(result):
+            dispatch_stat(value, name, key, (json['nodes'].values()[index]['name']) or ("node%d" % index))
+            if value is not None:
+                total += value
+        if key.type != "bytes" and count != 0:
+            total = total / count
+        dispatch_stat(total, name, key, "total")
 
 
 def dispatch_stat(result, name, key, node_index):
