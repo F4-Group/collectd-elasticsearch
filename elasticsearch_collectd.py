@@ -26,7 +26,7 @@ PREFIX = "elasticsearch"
 ES_CLUSTER = "elasticsearch"
 ES_HOST = "localhost"
 ES_PORT = 9200
-ES_ZONE = ""
+ES_ZONE = None
 VERBOSE_LOGGING = False
 
 Stat = collections.namedtuple('Stat', ('type', 'path'))
@@ -211,23 +211,27 @@ def fetch_stats():
     global ES_CLUSTER, ES_HOST, ES_PORT, STATS_CUR
 
     base_url = 'http://' + ES_HOST + ':' + str(ES_PORT) + '/'
+    zone_filter = ''
+    if ES_ZONE is not None:
+        zone_filter = '/zone:' + ES_ZONE
+
     server_info = fetch_url(base_url)
     if server_info is None:
         return
     version = server_info['version']['number']
 
     if StrictVersion(version) >= StrictVersion('2.0.0'):
-        ES_URL = base_url + '_nodes/zone:' + ES_ZONE + '/stats/transport,http,process,jvm,indices,thread_pool'
+        ES_URL = base_url + '_nodes' + zone_filter + '/stats/transport,http,process,jvm,indices,thread_pool'
         STATS_CUR = dict(STATS.items() + STATS_ES2.items())
         pools = ['generic', 'index', 'get', 'snapshot', 'force_merge', 'bulk', 'warmer', 'flush', 'search', 'refresh',
                  'fetch_shard_started', 'fetch_shard_store', 'listener', 'management', 'percolate', 'suggest']
     elif StrictVersion(version) >= StrictVersion('1.0.0'):
-        ES_URL = base_url + '_nodes/zone:' + ES_ZONE + '/stats/transport,http,process,jvm,indices,thread_pool'
+        ES_URL = base_url + '_nodes' + zone_filter + '/stats/transport,http,process,jvm,indices,thread_pool'
         STATS_CUR = dict(STATS.items() + STATS_ES1.items())
         pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search',
                  'refresh']
     else:
-        ES_URL = base_url + '_cluster/nodes/zone:' + ES_ZONE + '/stats?http=true&process=true&jvm=true&transport=true&thread_pool=true'
+        ES_URL = base_url + '_cluster/nodes/_local/stats?http=true&process=true&jvm=true&transport=true&thread_pool=true'
         STATS_CUR = dict(STATS.items() + STATS_ES09.items())
         pools = ['generic', 'index', 'get', 'snapshot', 'merge', 'optimize', 'bulk', 'warmer', 'flush', 'search',
                  'refresh']
