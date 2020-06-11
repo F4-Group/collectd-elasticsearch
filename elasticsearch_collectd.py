@@ -212,7 +212,9 @@ def fetch_stats():
 
     base_url = 'http://' + ES_HOST + ':' + str(ES_PORT) + '/'
     zone_filter = ''
-    if ES_ZONE is not None:
+    if ES_ZONE == '_local':
+        zone_filter = '/_local'
+    elif ES_ZONE is not None:
         zone_filter = '/zone:' + ES_ZONE
 
     server_info = fetch_url(base_url)
